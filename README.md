@@ -1,2 +1,5 @@
-# web-420
-WEB 420 RESTFul APIs
+# WEB 420 RESTful APIs
+## Contributors
+* Instructor: Richard Krasso
+* Student: Dua Hasan
+
