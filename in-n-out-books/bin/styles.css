@@ -1,0 +1,73 @@
+/* Global Styles */
+body {
+  font-family: Arial, sans-serif;
+  margin: 0;
+  padding: 0;
+  background-color: #f4f4f4;
+  color: #333;
+}
+
+/* Header Styles */
+header {
+  background-color: #333;
+  color: white;
+  padding: 20px;
+  text-align: center;
+}
+
+h1 {
+  margin: 0;
+  font-size: 3rem;
+}
+
+/* Section Styles */
+section {
+  padding: 20px;
+  margin: 20px;
+  background-color: white;
+  border-radius: 8px;
+  box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+}
+
+h2 {
+  color: #333;
+  font-size: 2rem;
+}
+
+/* Top Sellers List */
+ul {
+  list-style-type: none;
+  padding: 0;
+}
+
+ul li {
+  font-size: 1.2rem;
+  margin: 5px 0;
+}
+
+/* Footer Styles */
+footer {
+  text-align: center;
+  padding: 10px;
+  background-color: #333;
+  color: white;
+  position: fixed;
+  bottom: 0;
+  width: 100%;
+}
+
+/* Responsive Design */
+@media (max-width: 768px) {
+  body {
+      padding: 10px;
+  }
+  header h1 {
+      font-size: 2.5rem;
+  }
+  section {
+      padding: 10px;
+  }
+  h2 {
+      font-size: 1.5rem;
+  }
+}
