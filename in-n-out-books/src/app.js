@@ -1,62 +1,47 @@
 // Author: Dua Hasan
-// Date: 2025-01-21
+// Date: 2025-01-28
 // File Name: app.js
-// Description: Express application setup for "In-N-Out-Books" landing page, including routing and error handling.
+// Description: Express application setup for "In-N-Out-Books" API routes and error handling
 
-// Import the Express module
+// Import the Express module and the books collection
 const express = require('express');
-// Initialize the Express app
+const books = require('./database/books'); // Import books data from mock database
 const app = express();
-// Set the port for the server
 const PORT = process.env.PORT || 3000;
 
-// Set up a GET route for the root URL
-app.get('/', (req, res) => {
-  // Serve the landing page HTML
-  res.send(`
-      <!DOCTYPE html>
-      <html lang="en">
-      <head>
-          <meta charset="UTF-8">
-          <meta name="viewport" content="width=device-width, initial-scale=1.0">
-          <meta http-equiv="X-UA-Compatible" content="ie=edge">
-          <title>In-N-Out-Books</title>
-          <link rel="stylesheet" href="styles.css"> <!-- Link to external CSS file -->
-      </head>
-      <body>
-          <header>
-              <h1>Welcome to In-N-Out-Books</h1>
-          </header>
-          <section class="intro">
-              <h2>Introduction</h2>
-              <p>At In-N-Out-Books, we provide an easy and efficient platform to manage your personal collection of books. Whether you're an avid reader, a book club organizer, or just starting your library, we’ve got you covered!</p>
-          </section>
-          <section class="top-sellers">
-              <h2>Top Selling Books</h2>
-              <ul>
-                  <li><strong>Book Title 1</strong> by Author Name</li>
-                  <li><strong>Book Title 2</strong> by Author Name</li>
-                  <li><strong>Book Title 3</strong> by Author Name</li>
-              </ul>
-          </section>
-          <section class="hours">
-              <h2>Hours of Operation</h2>
-              <p>Monday - Friday: 9:00 AM - 6:00 PM</p>
-              <p>Saturday: 10:00 AM - 4:00 PM</p>
-              <p>Sunday: Closed</p>
-          </section>
-          <section class="contact">
-              <h2>Contact Information</h2>
-              <p>Email: support@innoutbooks.com</p>
-              <p>Phone: (555) 123-4567</p>
-              <p>Address: 123 Book Lane, Library City, BK 45678</p>
-          </section>
-          <footer>
-              <p>&copy; 2025 In-N-Out-Books. All rights reserved.</p>
-          </footer>
-      </body>
-      </html>
-  `);
+// Middleware to parse JSON requests (if needed for future expansions)
+app.use(express.json());
+
+// Route 1: GET /api/books - Returns an array of books
+app.get('/api/books', async (req, res) => {
+  try {
+    const allBooks = await books.find();  // Retrieve all books
+    res.json(allBooks); // Send the list of books as a JSON response
+  } catch (err) {
+    res.status(500).json({ message: 'Failed to retrieve books.', error: err.message });
+  }
+});
+
+// Route 2: GET /api/books/:id - Returns a single book based on the id
+app.get('/api/books/:id', async (req, res) => {
+  const { id } = req.params;
+
+  // Check if the id is a valid number
+  if (isNaN(id)) {
+    const err = new Error('Input must be a number');
+    err.status = 400;
+    return next(err); // Pass the error to the error handler
+  }
+
+  try {
+    const book = await books.findOne({ id: Number(id) }); // Retrieve the book with matching id
+    if (!book) {
+      return res.status(404).json({ message: 'Book not found' });
+    }
+    res.json(book); // Send the book as a JSON response
+  } catch (err) {
+    res.status(500).json({ message: 'Failed to retrieve book.', error: err.message });
+  }
 });
 
 // 404 Error handling middleware (for undefined routes)
@@ -67,18 +52,14 @@ app.use((req, res, next) => {
 // 500 Error handling middleware (for internal server errors)
 app.use((err, req, res, next) => {
   console.error(err.stack); // Log the error stack to the console
-
-  // If in development mode, send the error stack
-  if (process.env.NODE_ENV === 'development') {
-      res.status(500).json({
-          message: 'Something went wrong!',
-          error: err.stack
-      });
-  } else {
-      res.status(500).json({ message: 'Something went wrong!' });
-  }
+  res.status(err.status || 500).json({
+    message: err.message || 'Something went wrong!',
+  });
 });
 
-// Export the Express app
-module.exports = app;
+// Start the server
+app.listen(PORT, () => {
+  console.log(`Server is running on port ${PORT}`);
+});
 
+module.exports = app; // Export the Express app
