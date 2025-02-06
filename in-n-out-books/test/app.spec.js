@@ -1,7 +1,7 @@
 const request = require('supertest');
 const app = require('./app'); // Import the app
 
-describe('Chapter 1: API Tests', () => {
+describe('Chapter 4: API Tests', () => {
 
   // Test for GET /api/books (should return all books)
   it('should return an array of books', async () => {
@@ -24,12 +24,65 @@ describe('Chapter 1: API Tests', () => {
   it('should return 400 error if id is not a number', async () => {
     const response = await request(app).get('/api/books/invalidId');
     expect(response.status).toBe(400);
-    expect(response.body).toHaveProperty('message', 'ID must be a number');
+    expect(response.body).toHaveProperty('message', 'Input must be a number');
   });
 
   // Test for GET /api/books/:id (should return 404 if book is not found)
   it('should return 404 error if the book is not found', async () => {
     const response = await request(app).get('/api/books/999');
+    expect(response.status).toBe(404);
+    expect(response.body).toHaveProperty('message', 'Book not found');
+  });
+
+  // Test for POST /api/books (should return a 201 status code when adding a new book)
+  it('should return 201 status code when adding a new book', async () => {
+    const newBook = { title: 'New Book', author: 'John Doe' };
+
+    const response = await request(app)
+      .post('/api/books')
+      .send(newBook);
+
+    expect(response.status).toBe(201);
+    expect(response.body).toHaveProperty('id');
+    expect(response.body.title).toBe(newBook.title);
+    expect(response.body.author).toBe(newBook.author);
+  });
+
+  // Test for POST /api/books (should return a 400 status code when title is missing)
+  it('should return 400 status code when adding a new book with missing title', async () => {
+    const newBook = { author: 'John Doe' };
+
+    const response = await request(app)
+      .post('/api/books')
+      .send(newBook);
+
+    expect(response.status).toBe(400);
+    expect(response.body).toHaveProperty('message', 'Book title is required');
+  });
+
+  // Test for DELETE /api/books/:id (should return 204 status code when deleting a book)
+  it('should return 204 status code when deleting a book', async () => {
+    // First, add a new book to the mock database
+    const newBook = { title: 'Book to Delete', author: 'John Doe' };
+    const createdResponse = await request(app)
+      .post('/api/books')
+      .send(newBook);
+
+    const bookId = createdResponse.body.id;
+
+    // Now, delete the book
+    const deleteResponse = await request(app).delete(`/api/books/${bookId}`);
+    expect(deleteResponse.status).toBe(204);
+
+    // Verify that the book is actually deleted (attempt to fetch it again)
+    const getResponse = await request(app).get(`/api/books/${bookId}`);
+    expect(getResponse.status).toBe(404);
+    expect(getResponse.body).toHaveProperty('message', 'Book not found');
+  });
+
+  // Test for DELETE /api/books/:id (should return 404 error if book is not found)
+  it('should return 404 status code when trying to delete a non-existing book', async () => {
+    const response = await request(app).delete('/api/books/9999');
     expect(response.status).toBe(404);
     expect(response.body).toHaveProperty('message', 'Book not found');
   });
