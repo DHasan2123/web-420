@@ -1,15 +1,18 @@
 // Author: Dua Hasan
-// Date: 2025-01-28
+// Date: 02/05/2025
 // File Name: app.js
 // Description: Express application setup for "In-N-Out-Books" API routes and error handling
 
-// Import the Express module and the books collection
+// Import the Express module
 const express = require('express');
+// Import the books mock database functions
 const books = require('./database/books'); // Import books data from mock database
+// Initialize the Express app
 const app = express();
+// Set the port for the server
 const PORT = process.env.PORT || 3000;
 
-// Middleware to parse JSON requests (if needed for future expansions)
+// Middleware to parse JSON requests (for future expansions)
 app.use(express.json());
 
 // Route 1: GET /api/books - Returns an array of books
@@ -41,6 +44,49 @@ app.get('/api/books/:id', async (req, res) => {
     res.json(book); // Send the book as a JSON response
   } catch (err) {
     res.status(500).json({ message: 'Failed to retrieve book.', error: err.message });
+  }
+});
+
+// Route 3: POST /api/books - Adds a new book to the database
+app.post('/api/books', async (req, res) => {
+  try {
+    const { title, author } = req.body;
+
+    // Check if the book title is provided
+    if (!title) {
+      return res.status(400).json({ message: 'Book title is required' });
+    }
+
+    // Create the new book object (with a mock id)
+    const newBook = { id: Date.now(), title, author };
+
+    // Add the new book to the mock database
+    await books.addBook(newBook);
+
+    // Return the new book object with a 201 status code
+    return res.status(201).json(newBook);
+  } catch (err) {
+    res.status(500).json({ message: 'An error occurred while adding the book.', error: err.message });
+  }
+});
+
+// Route 4: DELETE /api/books/:id - Deletes a book by its id
+app.delete('/api/books/:id', async (req, res) => {
+  try {
+    const { id } = req.params;
+
+    // Try to delete the book from the mock database
+    const result = await books.deleteBook(id);
+
+    // If no book was found and deleted, return 404
+    if (!result) {
+      return res.status(404).json({ message: 'Book not found' });
+    }
+
+    // If the book was deleted successfully, return 204
+    return res.status(204).send();
+  } catch (err) {
+    res.status(500).json({ message: 'An error occurred while deleting the book.', error: err.message });
   }
 });
 
