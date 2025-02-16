@@ -86,4 +86,62 @@ describe('Chapter 4: API Tests', () => {
     expect(response.status).toBe(404);
     expect(response.body).toHaveProperty('message', 'Book not found');
   });
+
+  // ** New Test Cases for PUT /api/books/:id (update book)**
+
+  // Test for PUT /api/books/:id (should return 204 status code when updating a book)
+  it('should return 204 status code when updating a book', async () => {
+    // First, add a new book to the mock database
+    const newBook = { title: 'Book to Update', author: 'Jane Doe' };
+    const createdResponse = await request(app)
+      .post('/api/books')
+      .send(newBook);
+
+    const bookId = createdResponse.body.id;
+
+    // Now, update the book
+    const updatedBook = { title: 'Updated Book', author: 'Jane Doe' };
+    const updateResponse = await request(app)
+      .put(`/api/books/${bookId}`)
+      .send(updatedBook);
+
+    expect(updateResponse.status).toBe(204);
+
+    // Verify that the book was updated (attempt to fetch it again)
+    const getResponse = await request(app).get(`/api/books/${bookId}`);
+    expect(getResponse.status).toBe(200);
+    expect(getResponse.body.title).toBe(updatedBook.title);
+  });
+
+  // Test for PUT /api/books/:id (should return 400 error if id is not a number)
+  it('should return 400 error if id is not a number when updating a book', async () => {
+    const updatedBook = { title: 'Updated Book', author: 'Jane Doe' };
+    const response = await request(app)
+      .put('/api/books/invalidId')
+      .send(updatedBook);
+
+    expect(response.status).toBe(400);
+    expect(response.body).toHaveProperty('message', 'Input must be a number');
+  });
+
+  // Test for PUT /api/books/:id (should return 400 error when title is missing)
+  it('should return 400 error when updating a book with missing title', async () => {
+    const newBook = { title: 'Book to Update', author: 'Jane Doe' };
+    const createdResponse = await request(app)
+      .post('/api/books')
+      .send(newBook);
+
+    const bookId = createdResponse.body.id;
+
+    const updatedBook = { author: 'Jane Doe' }; // Missing title
+
+    const response = await request(app)
+      .put(`/api/books/${bookId}`)
+      .send(updatedBook);
+
+    expect(response.status).toBe(400);
+    expect(response.body).toHaveProperty('message', 'Bad Request');
+  });
+
 });
+
