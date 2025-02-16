@@ -1,5 +1,5 @@
 // Author: Dua Hasan
-// Date: 02/05/2025
+// Date: 02/08/2025
 // File Name: app.js
 // Description: Express application setup for "In-N-Out-Books" API routes and error handling
 
@@ -87,6 +87,41 @@ app.delete('/api/books/:id', async (req, res) => {
     return res.status(204).send();
   } catch (err) {
     res.status(500).json({ message: 'An error occurred while deleting the book.', error: err.message });
+  }
+});
+
+// ** New PUT Route (to update a book) **
+
+// Route 5: PUT /api/books/:id - Updates an existing book by its id
+app.put('/api/books/:id', async (req, res) => {
+  const { id } = req.params;
+
+  // Check if the id is a valid number
+  if (isNaN(id)) {
+    return res.status(400).json({ message: 'Input must be a number' });
+  }
+
+  const { title, author } = req.body;
+
+  // Check if the book title is provided
+  if (!title) {
+    return res.status(400).json({ message: 'Bad Request' });
+  }
+
+  try {
+    // Simulate updating the book in the mock database
+    const updatedBook = { id: Number(id), title, author };
+    const result = await books.updateBook(updatedBook); // Assuming updateBook is a function in the database mock
+
+    // If no book was found and updated, return 404
+    if (!result) {
+      return res.status(404).json({ message: 'Book not found' });
+    }
+
+    // Return 204 status code for successful update (no content to return)
+    return res.status(204).send();
+  } catch (err) {
+    res.status(500).json({ message: 'An error occurred while updating the book.', error: err.message });
   }
 });
 
