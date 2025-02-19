@@ -1,146 +1,154 @@
 // Author: Dua Hasan
-// Date: 02/08/2025
+// Date: 02/15/2025
 // File Name: app.js
-// Description: Express application setup for "In-N-Out-Books" API routes and error handling
-
-// Import the Express module
+// Description:  This file defines an Express-based server for the "In-N-Out-Books" API application.
+// It includes routes for managing books and user authentication, as well as error handling.
+// app.js
 const express = require('express');
-// Import the books mock database functions
-const books = require('./database/books'); // Import books data from mock database
-// Initialize the Express app
+const bodyParser = require('body-parser');
+const books = require('./books');
+const users = require('./users');
 const app = express();
-// Set the port for the server
-const PORT = process.env.PORT || 3000;
+const port = 3000;
 
-// Middleware to parse JSON requests (for future expansions)
-app.use(express.json());
+// Middleware to parse JSON data
+app.use(bodyParser.json());
 
-// Route 1: GET /api/books - Returns an array of books
+// API Routes for Books
 app.get('/api/books', async (req, res) => {
   try {
-    const allBooks = await books.find();  // Retrieve all books
-    res.json(allBooks); // Send the list of books as a JSON response
-  } catch (err) {
-    res.status(500).json({ message: 'Failed to retrieve books.', error: err.message });
+    const allBooks = await books.find();
+    res.status(200).json(allBooks); // Return all books
+  } catch (error) {
+    res.status(500).json({ message: 'Server error while retrieving books' });
   }
 });
 
-// Route 2: GET /api/books/:id - Returns a single book based on the id
 app.get('/api/books/:id', async (req, res) => {
-  const { id } = req.params;
+  const bookId = parseInt(req.params.id, 10);
 
-  // Check if the id is a valid number
-  if (isNaN(id)) {
-    const err = new Error('Input must be a number');
-    err.status = 400;
-    return next(err); // Pass the error to the error handler
-  }
-
-  try {
-    const book = await books.findOne({ id: Number(id) }); // Retrieve the book with matching id
-    if (!book) {
-      return res.status(404).json({ message: 'Book not found' });
-    }
-    res.json(book); // Send the book as a JSON response
-  } catch (err) {
-    res.status(500).json({ message: 'Failed to retrieve book.', error: err.message });
-  }
-});
-
-// Route 3: POST /api/books - Adds a new book to the database
-app.post('/api/books', async (req, res) => {
-  try {
-    const { title, author } = req.body;
-
-    // Check if the book title is provided
-    if (!title) {
-      return res.status(400).json({ message: 'Book title is required' });
-    }
-
-    // Create the new book object (with a mock id)
-    const newBook = { id: Date.now(), title, author };
-
-    // Add the new book to the mock database
-    await books.addBook(newBook);
-
-    // Return the new book object with a 201 status code
-    return res.status(201).json(newBook);
-  } catch (err) {
-    res.status(500).json({ message: 'An error occurred while adding the book.', error: err.message });
-  }
-});
-
-// Route 4: DELETE /api/books/:id - Deletes a book by its id
-app.delete('/api/books/:id', async (req, res) => {
-  try {
-    const { id } = req.params;
-
-    // Try to delete the book from the mock database
-    const result = await books.deleteBook(id);
-
-    // If no book was found and deleted, return 404
-    if (!result) {
-      return res.status(404).json({ message: 'Book not found' });
-    }
-
-    // If the book was deleted successfully, return 204
-    return res.status(204).send();
-  } catch (err) {
-    res.status(500).json({ message: 'An error occurred while deleting the book.', error: err.message });
-  }
-});
-
-// ** New PUT Route (to update a book) **
-
-// Route 5: PUT /api/books/:id - Updates an existing book by its id
-app.put('/api/books/:id', async (req, res) => {
-  const { id } = req.params;
-
-  // Check if the id is a valid number
-  if (isNaN(id)) {
+  // Validate ID is a number
+  if (isNaN(bookId)) {
     return res.status(400).json({ message: 'Input must be a number' });
   }
 
+  try {
+    const book = await books.findOne({ id: bookId });
+    res.status(200).json(book); // Return the book if found
+  } catch (error) {
+    res.status(404).json({ message: 'Book not found' }); // Book not found error
+  }
+});
+
+app.post('/api/books', async (req, res) => {
   const { title, author } = req.body;
 
-  // Check if the book title is provided
-  if (!title) {
-    return res.status(400).json({ message: 'Bad Request' });
+  // Validate required fields
+  if (!title || !author) {
+    return res.status(400).json({ message: 'Book title and author are required' });
+  }
+
+  const newBook = {
+    id: books.data.length + 1, // Generate a new ID (in a real app, use auto-increment or UUID)
+    title,
+    author,
+  };
+
+  try {
+    const response = await books.insertOne(newBook);
+    res.status(201).json(response.ops[0]); // Return the newly created book
+  } catch (error) {
+    res.status(500).json({ message: 'Error adding new book' });
+  }
+});
+
+app.delete('/api/books/:id', async (req, res) => {
+  const bookId = parseInt(req.params.id, 10);
+
+  // Validate ID is a number
+  if (isNaN(bookId)) {
+    return res.status(400).json({ message: 'Input must be a number' });
   }
 
   try {
-    // Simulate updating the book in the mock database
-    const updatedBook = { id: Number(id), title, author };
-    const result = await books.updateBook(updatedBook); // Assuming updateBook is a function in the database mock
-
-    // If no book was found and updated, return 404
-    if (!result) {
-      return res.status(404).json({ message: 'Book not found' });
-    }
-
-    // Return 204 status code for successful update (no content to return)
-    return res.status(204).send();
-  } catch (err) {
-    res.status(500).json({ message: 'An error occurred while updating the book.', error: err.message });
+    const response = await books.deleteOne({ id: bookId });
+    res.status(204).json({ message: 'Book deleted' }); // Return a 204 status code for successful deletion
+  } catch (error) {
+    res.status(404).json({ message: 'Book not found' }); // Book not found error
   }
 });
 
-// 404 Error handling middleware (for undefined routes)
-app.use((req, res, next) => {
-  res.status(404).send("Sorry, we couldn't find that page.");
+app.put('/api/books/:id', async (req, res) => {
+  const bookId = parseInt(req.params.id, 10);
+  const { title, author } = req.body;
+
+  // Validate ID is a number
+  if (isNaN(bookId)) {
+    return res.status(400).json({ message: 'Input must be a number' });
+  }
+
+  // Validate required fields
+  if (!title || !author) {
+    return res.status(400).json({ message: 'Book title and author are required' });
+  }
+
+  try {
+    const updateData = { title, author };
+    const response = await books.updateOne({ id: bookId }, updateData);
+    res.status(204).json({ message: 'Book updated successfully' });
+  } catch (error) {
+    res.status(404).json({ message: 'Book not found' }); // Book not found error
+  }
 });
 
-// 500 Error handling middleware (for internal server errors)
+// API Routes for Users
+app.get('/api/users', async (req, res) => {
+  try {
+    const allUsers = await users.find();
+    res.status(200).json(allUsers); // Return all users
+  } catch (error) {
+    res.status(500).json({ message: 'Server error while retrieving users' });
+  }
+});
+
+app.post('/api/users', async (req, res) => {
+  const { email, password, securityQuestions } = req.body;
+
+  // Validate required fields
+  if (!email || !password || !securityQuestions || !Array.isArray(securityQuestions)) {
+    return res.status(400).json({ message: 'Email, password, and security questions are required' });
+  }
+
+  const newUser = {
+    id: users.data.length + 1, // Generate a new ID (in a real app, use auto-increment or UUID)
+    email,
+    password,
+    securityQuestions,
+  };
+
+  try {
+    const response = await users.insertOne(newUser);
+    res.status(201).json(response.ops[0]); // Return the newly created user
+  } catch (error) {
+    res.status(500).json({ message: 'Error adding new user' });
+  }
+});
+
+// Catch-all route for handling invalid paths
+app.use((req, res) => {
+  res.status(404).json({ message: 'Route not found' });
+});
+
+// Global error handler for server errors
 app.use((err, req, res, next) => {
-  console.error(err.stack); // Log the error stack to the console
-  res.status(err.status || 500).json({
-    message: err.message || 'Something went wrong!',
-  });
+  console.error(err.stack);
+  res.status(500).json({ message: 'Something went wrong, please try again later' });
 });
 
 // Start the server
-app.listen(PORT, () => {
-  console.log(`Server is running on port ${PORT}`);
+app.listen(port, () => {
+  console.log(`Server running on http://localhost:${port}`);
 });
 
-module.exports = app; // Export the Express app
+module.exports = app; // Export the app for testing purposes
+
