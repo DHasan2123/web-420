@@ -48,9 +48,21 @@ describe('Chapter 4: API Tests', () => {
     expect(response.body.author).toBe(newBook.author);
   });
 
-  // Test for POST /api/books (should return a 400 status code when title is missing)
+  // Test for POST /api/books (should return 400 status code when title is missing)
   it('should return 400 status code when adding a new book with missing title', async () => {
     const newBook = { author: 'John Doe' };
+
+    const response = await request(app)
+      .post('/api/books')
+      .send(newBook);
+
+    expect(response.status).toBe(400);
+    expect(response.body).toHaveProperty('message', 'Book title is required');
+  });
+
+  // Test for POST /api/books (should return 400 status code for invalid book data)
+  it('should return 400 status code when adding a new book with invalid data', async () => {
+    const newBook = {}; // Empty body
 
     const response = await request(app)
       .post('/api/books')
@@ -143,5 +155,15 @@ describe('Chapter 4: API Tests', () => {
     expect(response.body).toHaveProperty('message', 'Bad Request');
   });
 
-});
+  // Test for PUT /api/books/:id (should return 404 error if book is not found)
+  it('should return 404 error when updating a non-existing book', async () => {
+    const updatedBook = { title: 'Updated Book', author: 'Jane Doe' };
+    const response = await request(app)
+      .put('/api/books/9999')
+      .send(updatedBook);
 
+    expect(response.status).toBe(404);
+    expect(response.body).toHaveProperty('message', 'Book not found');
+  });
+
+});
