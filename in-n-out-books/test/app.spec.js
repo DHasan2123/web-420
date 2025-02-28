@@ -166,4 +166,72 @@ describe('Chapter 4: API Tests', () => {
     expect(response.body).toHaveProperty('message', 'Book not found');
   });
 
+  // ** New Test Cases for /api/users/:email/verify-security-question**
+
+  // Test for POST /api/users/:email/verify-security-question (should return 200 when security answers are correct)
+  it('should return 200 status code when security questions are answered correctly', async () => {
+    const email = 'harry@hogwarts.edu';
+    const body = [
+      { answer: 'Hedwig' },
+      { answer: 'Quidditch Through the Ages' },
+      { answer: 'Evans' },
+    ];
+
+    const response = await request(app)
+      .post(`/api/users/${email}/verify-security-question`)
+      .send(body);
+
+    expect(response.status).toBe(200);
+    expect(response.body.message).toBe('Security questions successfully answered');
+  });
+
+  // Test for POST /api/users/:email/verify-security-question (should return 400 when request body fails AJV validation)
+  it('should return 400 status code when the request body fails ajv validation', async () => {
+    const email = 'harry@hogwarts.edu';
+    const body = [
+      { answer: 'Hedwig' },
+      { incorrectField: 'invalid' }, // Invalid field
+    ];
+
+    const response = await request(app)
+      .post(`/api/users/${email}/verify-security-question`)
+      .send(body);
+
+    expect(response.status).toBe(400);
+    expect(response.body.message).toBe('Bad Request');
+  });
+
+  // Test for POST /api/users/:email/verify-security-question (should return 401 if answers are incorrect)
+  it('should return 401 status code when answers are incorrect', async () => {
+    const email = 'harry@hogwarts.edu';
+    const body = [
+      { answer: 'IncorrectAnswer' }, // Incorrect answer
+      { answer: 'Quidditch Through the Ages' },
+      { answer: 'Evans' },
+    ];
+
+    const response = await request(app)
+      .post(`/api/users/${email}/verify-security-question`)
+      .send(body);
+
+    expect(response.status).toBe(401);
+    expect(response.body.message).toBe('Unauthorized');
+  });
+
+  // Test for POST /api/users/:email/verify-security-question (should return 404 if user not found)
+  it('should return 404 status code when user is not found', async () => {
+    const email = 'nonexistent@hogwarts.edu';
+    const body = [
+      { answer: 'SomeAnswer' },
+      { answer: 'SomeOtherAnswer' },
+      { answer: 'YetAnotherAnswer' },
+    ];
+
+    const response = await request(app)
+      .post(`/api/users/${email}/verify-security-question`)
+      .send(body);
+
+    expect(response.status).toBe(404);
+    expect(response.body.message).toBe('User not found');
+  });
 });
