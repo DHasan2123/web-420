@@ -1,6 +1,6 @@
 /**
  * Author: Dua Hasan
- * Date: 02/23/2025
+ * Date: 03/06/2025
  * File Name: app.js
  * Description: This file defines an Express-based server for the "In-N-Out-Books" API application.
  *              It includes routes for managing books and user authentication, as well as error handling.
@@ -15,7 +15,9 @@ const bcrypt = require('bcryptjs');
 const books = require('./books');
 const users = require('./users');
 const app = express();
-const port = 3000;
+
+// Use environment variable for port, or fallback to 3000
+const port = process.env.PORT || 3000; // Use PORT from environment, fallback to 3000 if not available
 
 // Middleware to parse JSON data
 app.use(bodyParser.json());
@@ -101,7 +103,7 @@ app.use((err, req, res, next) => {
   res.status(500).json({ message: 'Something went wrong, please try again later' });
 });
 
-// Start the server
+// Start the server, using environment variable for port
 app.listen(port, () => {
   console.log(`Server running on http://localhost:${port}`);
 });
